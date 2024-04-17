@@ -159,10 +159,8 @@ export function multibaseKeyToDidKey(
   publicKeyMultibase: VerificationMethod['publicKeyMultibase']
 ): DecodedVerificationMethod {
   const decodedMulticodecPublicKey = multibaseDecode(publicKeyMultibase)
-  const [keyTypeFlag, publicKey] = [
-    decodedMulticodecPublicKey.subarray(0, 1)[0],
-    decodedMulticodecPublicKey.subarray(1),
-  ]
+  const keyTypeFlag = decodedMulticodecPublicKey[0]
+  const publicKey = decodedMulticodecPublicKey.slice(1)
   const [keyType, expectedPublicKeyLength] = multicodecPrefixes[keyTypeFlag]
   if (keyType === undefined) {
     throw new SDKErrors.DidError(
@@ -206,9 +204,11 @@ export function keypairToMultibaseKey({
       `Key of type "${type}" is expected to be ${expectedPublicKeySize} bytes long. Provided key is ${publicKey.length} bytes long instead.`
     )
   }
-  const multiCodecPublicKey = [multiCodecPublicKeyPrefix, ...publicKey]
+  const multiCodecPublicKey = new Uint8Array(publicKey.length + 1)
+  multiCodecPublicKey[0] = multiCodecPublicKeyPrefix
+  multiCodecPublicKey.set(publicKey, 1)
   return u8aToString(
-    multibaseEncode('base58btc', Uint8Array.from(multiCodecPublicKey))
+    multibaseEncode('base58btc', multiCodecPublicKey)
   ) as `z${string}`
 }
 
